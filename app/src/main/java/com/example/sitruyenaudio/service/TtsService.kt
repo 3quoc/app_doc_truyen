@@ -61,6 +61,7 @@ class TtsService : Service(), TextToSpeech.OnInitListener {
             override fun onStart(utteranceId: String?) {
                 utteranceId?.toIntOrNull()?.let {
                     _currentIndexFlow.value = it
+                    currentIndex = it
                 }
             }
 
@@ -71,9 +72,15 @@ class TtsService : Service(), TextToSpeech.OnInitListener {
                     _isPlaying.value = false
                     _onChapterFinished.value = true
                 } else if (index < (currentChapter?.paragraphs?.size ?: 0) - 1) {
+                    // Cập nhật index hiện tại (để chuẩn bị cho trường hợp resume)
                     currentIndex = index + 1
+                    // Hàng đợi đã có sẵn đoạn `index + 1` và sẽ tự động bắt đầu đọc.
+                    // Ta chỉ cần nạp trước (queue) đoạn tiếp theo của nó là `index + 2`.
                     if (_isPlaying.value) {
-                        speakParagraph(currentIndex)
+                        val nextToQueue = currentIndex + 1
+                        if (nextToQueue < currentChapter!!.paragraphs.size) {
+                            speakParagraph(nextToQueue, TextToSpeech.QUEUE_ADD)
+                        }
                     }
                 }
             }
@@ -146,12 +153,22 @@ class TtsService : Service(), TextToSpeech.OnInitListener {
         _onChapterFinished.value = false
     }
 
+    private fun playStartingFrom(index: Int) {
+        if (!isTtsInitialized || currentChapter == null) return
+        // Xóa hàng đợi và đọc đoạn hiện tại
+        speakParagraph(index, TextToSpeech.QUEUE_FLUSH)
+        // Nạp trước đoạn tiếp theo vào hàng đợi
+        if (index + 1 < currentChapter!!.paragraphs.size) {
+            speakParagraph(index + 1, TextToSpeech.QUEUE_ADD)
+        }
+    }
+
     fun play() {
         if (!isTtsInitialized || currentChapter == null) return
         _isPlaying.value = true
         _onChapterFinished.value = false
         updateNotification()
-        speakParagraph(currentIndex)
+        playStartingFrom(currentIndex)
     }
 
     fun pause() {
@@ -164,7 +181,7 @@ class TtsService : Service(), TextToSpeech.OnInitListener {
         if (!isTtsInitialized || currentChapter == null) return
         _isPlaying.value = true
         updateNotification()
-        speakParagraph(currentIndex)
+        playStartingFrom(currentIndex)
     }
 
     fun playParagraph(index: Int) {
@@ -173,21 +190,21 @@ class TtsService : Service(), TextToSpeech.OnInitListener {
             currentIndex = index
             _isPlaying.value = true
             updateNotification()
-            speakParagraph(currentIndex)
+            playStartingFrom(currentIndex)
         }
     }
 
-    private fun speakParagraph(index: Int) {
+    private fun speakParagraph(index: Int, queueMode: Int = TextToSpeech.QUEUE_FLUSH) {
         val text = currentChapter?.paragraphs?.getOrNull(index)
         if (text == null) {
             Log.e(TAG, "No text found for index $index")
             return
         }
         
-        Log.i(TAG, "Speaking paragraph $index, length: ${text.length}")
+        Log.i(TAG, "Speaking paragraph $index, length: ${text.length}, queueMode: $queueMode")
         val params = android.os.Bundle()
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, index.toString())
-        val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, index.toString())
+        val result = tts?.speak(text, queueMode, params, index.toString())
         Log.i(TAG, "tts.speak result: $result (SUCCESS is ${TextToSpeech.SUCCESS}, ERROR is ${TextToSpeech.ERROR})")
     }
 

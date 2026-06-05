@@ -19,11 +19,20 @@ class HistoryManager(context: Context) {
         }
     }
 
+    private fun getStoryId(url: String): String {
+        val parts = url.split("?")[0].split("#")[0].split("/")
+        if (parts.size >= 5) {
+            return parts.take(5).joinToString("/")
+        }
+        return url
+    }
+
     fun addHistory(item: HistoryItem) {
         val currentList = getHistory().toMutableList()
         
+        val itemStoryId = getStoryId(item.url)
         // Remove if exists to update to the top
-        currentList.removeAll { it.url == item.url || it.title == item.title }
+        currentList.removeAll { getStoryId(it.url) == itemStoryId }
         
         // Add to top
         currentList.add(0, item)
