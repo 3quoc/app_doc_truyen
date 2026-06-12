@@ -18,7 +18,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private val repository = ScraperRepository()
     private val historyManager = HistoryManager(application)
     
-    var currentUrl: String = ""
+    private val _currentUrl = MutableStateFlow("https://metruyenchuvn.com/toan-dan-hai-dao-cau-sinh-ta-co-the-nghe-duoc-van-vat-tieng-long/chuong-1-E1cQVZhJ0hxz#")
+    val currentUrl: StateFlow<String> = _currentUrl.asStateFlow()
 
     var ttsService: TtsService? = null
         set(value) {
@@ -68,7 +69,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     val availableVoices: StateFlow<List<Voice>> = _availableVoices.asStateFlow()
 
     fun fetchChapter(url: String, autoPlay: Boolean = false) {
-        currentUrl = url
+        _currentUrl.value = url
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null

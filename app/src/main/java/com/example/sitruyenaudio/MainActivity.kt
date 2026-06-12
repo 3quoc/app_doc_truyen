@@ -210,7 +210,8 @@ fun ReaderScreen(modifier: Modifier = Modifier, viewModel: ReaderViewModel) {
     var showSettings by remember { mutableStateOf(false) }
     var currentSpeed by remember { mutableFloatStateOf(1.0f) }
 
-    var urlInput by remember { mutableStateOf("https://metruyenchuvn.com/toan-dan-hai-dao-cau-sinh-ta-co-the-nghe-duoc-van-vat-tieng-long/chuong-1-E1cQVZhJ0hxz#") }
+    val currentUrl by viewModel.currentUrl.collectAsState()
+    var urlInput by remember(currentUrl) { mutableStateOf(currentUrl) }
 
     // Cuộn tới dòng đang đọc
     LaunchedEffect(currentIndex) {
