@@ -65,9 +65,27 @@ class ScraperRepository {
                 }
             }
 
+            // Lấy link chương trước
+            val prevElement = document.select("a.prev").first()
+            var prevUrl = prevElement?.attr("href")
+            
+            if (!prevUrl.isNullOrEmpty() && !prevUrl.startsWith("http")) {
+                if (prevUrl.startsWith("/")) {
+                    prevUrl = "https://metruyenchuvn.com$prevUrl"
+                } else {
+                    val baseUri = document.baseUri()
+                    val lastSlash = baseUri.lastIndexOf('/')
+                    prevUrl = if (lastSlash != -1) {
+                        baseUri.substring(0, lastSlash + 1) + prevUrl
+                    } else {
+                        "https://metruyenchuvn.com/$prevUrl"
+                    }
+                }
+            }
+
             // Xoá các câu vô nghĩa cuối file (như khoảng trắng hoặc rác nếu có)
             
-            Result.success(Chapter(title, paragraphs, nextUrl))
+            Result.success(Chapter(title, paragraphs, nextUrl, prevUrl))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching chapter", e)
             Result.failure(e)

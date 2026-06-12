@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -317,9 +319,21 @@ fun ReaderScreen(modifier: Modifier = Modifier, viewModel: ReaderViewModel) {
         ) {
             Row(
                 modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(
+                    onClick = {
+                        val prevUrl = currentChapter?.prevChapterUrl
+                        if (!prevUrl.isNullOrEmpty()) {
+                            viewModel.fetchChapter(prevUrl, autoPlay = true)
+                        }
+                    },
+                    enabled = currentChapter?.prevChapterUrl != null
+                ) {
+                    Icon(Icons.Filled.SkipPrevious, contentDescription = "Chương trước", modifier = Modifier.size(36.dp))
+                }
+
                 FloatingActionButton(
                     onClick = { viewModel.playPause() },
                     containerColor = MaterialTheme.colorScheme.primary
@@ -328,6 +342,18 @@ fun ReaderScreen(modifier: Modifier = Modifier, viewModel: ReaderViewModel) {
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Filled.PlayArrow,
                         contentDescription = "Play/Pause"
                     )
+                }
+
+                IconButton(
+                    onClick = {
+                        val nextUrl = currentChapter?.nextChapterUrl
+                        if (!nextUrl.isNullOrEmpty()) {
+                            viewModel.fetchChapter(nextUrl, autoPlay = true)
+                        }
+                    },
+                    enabled = currentChapter?.nextChapterUrl != null
+                ) {
+                    Icon(Icons.Filled.SkipNext, contentDescription = "Chương tiếp", modifier = Modifier.size(36.dp))
                 }
             }
         }
